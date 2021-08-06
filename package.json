@@ -29,13 +29,44 @@
 		]
 	},
 	"scripts": {
+		"start": "CHOKIDAR_USEPOLLING=true react-scripts start",
+		"build": "./scripts/build-non-split.js",
 		"lint": "eslint .",
 		"pretest": "npm run lint"
 	},
+	"dependencies": {
+		"nanoid": "^3.1.23",
+		"node-sass": "^6.0.1",
+		"react": "^17.0.2",
+		"react-dom": "^17.0.2",
+		"react-scripts": "4.0.3"
+	},
 	"devDependencies": {
-		"@types/vscode": "^1.59.0",
 		"@types/node": "14.x",
+		"@types/vscode": "^1.59.0",
 		"eslint": "^7.27.0",
+		"rewire": "^5.0.0",
 		"vscode-test": "^1.5.2"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/CarlesRojas/GitGo.git"
+	},
+	"browserslist": {
+		"production": [
+			">0.2%",
+			"not dead",
+			"not op_mini all"
+		],
+		"development": [
+			"last 1 chrome version",
+			"last 1 firefox version",
+			"last 1 safari version"
+		]
+	},
+	"eslintConfig": {
+		"extends": [
+			"react-app"
+		]
 	}
 }
