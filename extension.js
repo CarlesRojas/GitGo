@@ -9,6 +9,10 @@ function activate(context) {
     // Current Panel
     let currentPanel;
 
+    //  ###########################################################
+    //      OPEN THE PANEL
+    //  ###########################################################
+
     // Open the Git Go Webview Panel
     let openDisposable = vscode.commands.registerCommand("git-go.open", function () {
         // If the panel is already open, show it in the target column
@@ -16,6 +20,11 @@ function activate(context) {
         // Otherwise: Create new Panel
         else currentPanel = createGitGoPanel(context);
     });
+    context.subscriptions.push(openDisposable);
+
+    //  ###########################################################
+    //      REFRESH PANEL
+    //  ###########################################################
 
     // Refresh Panel <- Debug Only
     let refreshDisposable = vscode.commands.registerCommand("git-go.refresh", function () {
@@ -28,9 +37,39 @@ function activate(context) {
         // Open dev tools
         openDevTools();
     });
-
-    context.subscriptions.push(openDisposable);
     context.subscriptions.push(refreshDisposable);
+
+    //  ###########################################################
+    //      WATCH FOR CHANGES IN THE .GIT DIRECTORY
+    //  ###########################################################
+
+    // Get path for the watcher
+    const workspaceFolder = vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+
+    // There is a git folder <- TODO
+    if (workspaceFolder) {
+        let watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(workspaceFolder, "**/.git/**"), false, false, false);
+
+        // On file changed
+        watcher.onDidChange((event) => {
+            console.log("change");
+            console.log(event.fsPath);
+        });
+
+        // On file created
+        watcher.onDidCreate((event) => {
+            console.log("create");
+            console.log(event.fsPath);
+        });
+
+        // On file deleted
+        watcher.onDidDelete((event) => {
+            console.log("delete");
+            console.log(event.fsPath);
+        });
+    } else {
+        console.log("No repository found in the current workspace.");
+    }
 }
 
 // Creates and returns the Git Go panel
