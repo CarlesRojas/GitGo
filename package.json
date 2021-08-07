@@ -15,7 +15,7 @@
 		"onCommand:git-go.open",
 		"onCommand:git-go.refresh"
 	],
-	"main": "./extension.js",
+	"main": "./extension-src/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -35,6 +35,8 @@
 		"pretest": "npm run lint"
 	},
 	"dependencies": {
+		"byline": "^5.0.0",
+		"child_process": "^1.0.2",
 		"nanoid": "^3.1.23",
 		"node-sass": "^6.0.1",
 		"react": "^17.0.2",
