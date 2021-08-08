@@ -1,8 +1,8 @@
 const vscode = require("vscode");
 const path = require("path");
-const nanoid = require("nanoid");
-const { spawn } = require("child_process");
-const byline = require("byline");
+const fs = require("fs");
+const { getUniqueId, getCurrentActiveColumn } = require("./utils");
+const { parseGitFolder } = require("./parseGitFolder");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -37,7 +37,7 @@ async function activate(context) {
         currentPanel = createGitGoPanel(context);
 
         // Open dev tools
-        openDevTools();
+        // openDevTools(); ROJAS
     });
     context.subscriptions.push(refreshDisposable);
 
@@ -46,10 +46,11 @@ async function activate(context) {
     //  ###########################################################
 
     // Get path for the watcher
-    const workspaceFolder = vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+    const gitRepoExists = workspaceFolder && fs.existsSync(path.resolve(workspaceFolder.fsPath, ".git"));
 
     // There is a git folder <- TODO
-    if (workspaceFolder) {
+    if (workspaceFolder && gitRepoExists) {
         // Add watcher
         const gitObjectsPath = new vscode.RelativePattern(workspaceFolder, "**/.git/objects/**");
         let objectsWatcher = vscode.workspace.createFileSystemWatcher(gitObjectsPath, false, false, false);
@@ -60,94 +61,11 @@ async function activate(context) {
         objectsWatcher.onDidDelete(() => parseGitFolder(workspaceFolder));
 
         console.log(await parseGitFolder(workspaceFolder));
-    } else {
-        console.log("No repository found in the current workspace.");
     }
-}
 
-// Reads the git objects and returns a json representation of them
-function parseGitFolder(workspaceFolder) {
-    // var repoPath = path.resolve(workspaceFolder.fsPath, ".git");
-
-    return new Promise((resolve, reject) => {
-        const gitParams = ["cat-file", "--batch-check", "--batch-all-objects"];
-        const gitProcess = spawn("git", gitParams, { cwd: workspaceFolder.fsPath });
-
-        // Handle error
-        gitProcess.on("error", (error) => {
-            console.log(error);
-            reject(error);
-        });
-
-        // Parse data
-        const parsedObjects = {
-            objects: [],
-            initialCommit: "",
-            commits: [],
-            trees: [],
-            blobs: [],
-            blobsInTree: [],
-        };
-        const streamByLine = byline(gitProcess.stdout);
-
-        // Object priomises
-        var objectPromises = [];
-
-        // When reading a line -> Get all info
-        streamByLine.on("data", (line) => {
-            objectPromises.push(
-                new Promise(async (resolve, reject) => {
-                    const object = await parseGitObject(line.toString());
-
-                    if (object) {
-                        parsedObjects.objects.push(object);
-
-                        // Save commits
-                        if (object.type === "commit") {
-                            parsedObjects.commits.push(object.hash);
-                            if (!object.parent) parsedObjects.initialCommit = object.hash;
-                        }
-
-                        // Save trees
-                        else if (object.type === "tree") parsedObjects.trees.push(object.hash);
-                        // Save blobs
-                        else if (object.type === "blob") parsedObjects.blobs.push(object.hash);
-                    } else reject();
-
-                    resolve();
-                })
-            );
-        });
-
-        streamByLine.on("error", (error) => {
-            reject(error);
-        });
-
-        streamByLine.on("end", async () => {
-            await Promise.all(objectPromises);
-            resolve(parsedObjects);
-        });
-    });
-}
-
-// Parse git object
-function parseGitObject(line) {
-    return new Promise((resolve, reject) => {
-        // Get the three parts
-        const lineParts = line.split(" ");
-        if (lineParts.length !== 3) reject();
-        const hash = lineParts[0];
-        const type = lineParts[1];
-        const size = lineParts[2];
-
-        // Get more info
-        if (type === "commit") {
-        } else if (type === "tree") {
-        } else if (type === "blob") {
-        }
-
-        resolve({ hash, type, size });
-    });
+    // No Working directory found  or no git project in current directory
+    else if (!workspaceFolder) console.log("Open the containing folder of a git Repo to start.");
+    else console.log("Init a git repo to start.");
 }
 
 // Creates and returns the Git Go panel
@@ -174,18 +92,6 @@ function createGitGoPanel(context) {
     );
 
     return newPanel;
-}
-
-// Get the current active column
-function getCurrentActiveColumn() {
-    return vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
-}
-
-// Open dev tools for the webview
-function openDevTools() {
-    setTimeout(() => {
-        vscode.commands.executeCommand("workbench.action.webview.openDeveloperTools");
-    }, 500);
 }
 
 // Get the initial html content
@@ -219,12 +125,6 @@ function getWebviewContent(extensionPath) {
                     <script nonce="${uniqueId}" src="${scriptUri}"></script>
                 </body>
             </html>`;
-}
-
-// Get unique ID
-function getUniqueId() {
-    const generateID = nanoid.customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 32);
-    return generateID();
 }
 
 // this method is called when your extension is deactivated
