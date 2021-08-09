@@ -1,17 +1,18 @@
-const vscode = require("vscode");
 const path = require("path");
+const vscode = require("vscode");
 const gitLog = require("git-log-parser");
-const fs = require("fs");
+// const simpleGit = require("simple-git");
 const toArray = require("stream-to-array");
-const { getUniqueId, getCurrentActiveColumn } = require("./utils");
+const { getUniqueId, getCurrentActiveColumn, openDevTools } = require("./utils");
 
-/**
- * @param {vscode.ExtensionContext} context
- */
+// Git Interface
+// const gitInterface = simpleGit();
+
+// Current Panel
+var currentPanel;
+
+// Called when the extension activates
 async function activate(context) {
-    // Current Panel
-    let currentPanel;
-
     //  ###########################################################
     //      OPEN THE PANEL
     //  ###########################################################
@@ -38,7 +39,7 @@ async function activate(context) {
         currentPanel = createGitGoPanel(context);
 
         // Open dev tools
-        // openDevTools(); ROJAS
+        openDevTools();
     });
     context.subscriptions.push(refreshDisposable);
 
@@ -55,6 +56,10 @@ async function activate(context) {
     console.log(gitLogResult);
 }
 
+//  ###########################################################
+//      PANEL CREATION
+//  ###########################################################
+
 // Creates and returns the Git Go panel
 function createGitGoPanel(context) {
     // Create Panel
@@ -68,6 +73,9 @@ function createGitGoPanel(context) {
 
     // Set panel HTML content
     newPanel.webview.html = getWebviewContent(context.extensionPath);
+
+    // Recieve messages
+    newPanel.webview.onDidReceiveMessage(recieveMessage, undefined, context.subscriptions);
 
     // Reset when the current panel is closed
     newPanel.onDidDispose(
@@ -110,8 +118,26 @@ function getWebviewContent(extensionPath) {
                     <noscript>You need to enable JavaScript to run this app.</noscript>
                     <div id="root"></div>
                     <script nonce="${uniqueId}" src="${scriptUri}"></script>
+                    <script>
+                        window.acquireVsCodeApi = acquireVsCodeApi;
+                    </script>
                 </body>
             </html>`;
+}
+
+//  ###########################################################
+//      WEBVIEW INTERFACE
+//  ###########################################################
+
+// Recieve messages from the webview
+function recieveMessage(message) {
+    console.log(message);
+    sendMessage({ message: "HELLO REACT!!" });
+}
+
+// Send message to webview
+function sendMessage(message) {
+    currentPanel.webview.postMessage(message);
 }
 
 // this method is called when your extension is deactivated
