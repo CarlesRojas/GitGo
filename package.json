@@ -37,12 +37,14 @@
 	"dependencies": {
 		"byline": "^5.0.0",
 		"child_process": "^1.0.2",
+		"git-log-parser": "^1.2.0",
 		"nanoid": "^3.1.23",
 		"node-sass": "^6.0.1",
 		"react": "^17.0.2",
 		"react-dom": "^17.0.2",
 		"react-scripts": "4.0.3",
-		"simple-git": "^2.42.0"
+		"simple-git": "^2.42.0",
+		"stream-to-array": "^2.3.0"
 	},
 	"devDependencies": {
 		"@types/node": "14.x",

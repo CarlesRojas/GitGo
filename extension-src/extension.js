@@ -1,9 +1,9 @@
 const vscode = require("vscode");
 const path = require("path");
+const gitLog = require("git-log-parser");
 const fs = require("fs");
+const toArray = require("stream-to-array");
 const { getUniqueId, getCurrentActiveColumn } = require("./utils");
-const { parseGitFolder } = require("./parseGitFolder");
-const GitParser = require("./GitParser");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -46,9 +46,13 @@ async function activate(context) {
     //      INIT GIT PARSER
     //  ###########################################################
 
-    const gitParser = new GitParser();
-    const commits = gitParser.getAllCommits();
-    console.log(commits);
+    // Git folder
+    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+    // const gitRepoExists = this.workspaceFolder && fs.existsSync(path.resolve(this.workspaceFolder.fsPath, ".git"));
+
+    var gitLogStream = gitLog.parse({ "max-count": 5, all: true, skip: 5 }, { cwd: workspaceFolder.fsPath });
+    const gitLogResult = await toArray(gitLogStream);
+    console.log(gitLogResult);
 }
 
 // Creates and returns the Git Go panel
