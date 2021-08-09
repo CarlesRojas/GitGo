@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { getUniqueId, getCurrentActiveColumn } = require("./utils");
 const { parseGitFolder } = require("./parseGitFolder");
+const GitParser = require("./GitParser");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -42,30 +43,12 @@ async function activate(context) {
     context.subscriptions.push(refreshDisposable);
 
     //  ###########################################################
-    //      WATCH FOR CHANGES IN THE .GIT DIRECTORY
+    //      INIT GIT PARSER
     //  ###########################################################
 
-    // Get path for the watcher
-    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
-    const gitRepoExists = workspaceFolder && fs.existsSync(path.resolve(workspaceFolder.fsPath, ".git"));
-
-    // There is a git folder <- TODO
-    if (workspaceFolder && gitRepoExists) {
-        // Add watcher
-        const gitObjectsPath = new vscode.RelativePattern(workspaceFolder, "**/.git/objects/**");
-        let objectsWatcher = vscode.workspace.createFileSystemWatcher(gitObjectsPath, false, false, false);
-
-        // On file created, changed or deleted
-        objectsWatcher.onDidChange(() => parseGitFolder(workspaceFolder));
-        objectsWatcher.onDidCreate(() => parseGitFolder(workspaceFolder));
-        objectsWatcher.onDidDelete(() => parseGitFolder(workspaceFolder));
-
-        console.log(await parseGitFolder(workspaceFolder));
-    }
-
-    // No Working directory found  or no git project in current directory
-    else if (!workspaceFolder) console.log("Open the containing folder of a git Repo to start.");
-    else console.log("Init a git repo to start.");
+    const gitParser = new GitParser();
+    const commits = gitParser.getAllCommits();
+    console.log(commits);
 }
 
 // Creates and returns the Git Go panel
