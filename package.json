@@ -35,6 +35,7 @@
 		"pretest": "npm run lint"
 	},
 	"dependencies": {
+		"byline": "^5.0.0",
 		"git-log-parser": "^1.2.0",
 		"nanoid": "^3.1.23",
 		"node-sass": "^6.0.1",
