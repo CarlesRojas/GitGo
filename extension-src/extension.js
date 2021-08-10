@@ -1,15 +1,13 @@
 const path = require("path");
 const vscode = require("vscode");
 const gitLog = require("git-log-parser");
-// const simpleGit = require("simple-git");
 const toArray = require("stream-to-array");
+const WebviewInterface = require("./webviewInterface");
 const { getUniqueId, getCurrentActiveColumn, openDevTools } = require("./utils");
-
-// Git Interface
-// const gitInterface = simpleGit();
 
 // Current Panel
 var currentPanel;
+var webviewInterface;
 
 // Called when the extension activates
 async function activate(context) {
@@ -47,7 +45,7 @@ async function activate(context) {
     //      INIT GIT PARSER
     //  ###########################################################
 
-    // Git folder
+    // Workspace folder
     const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
     // const gitRepoExists = this.workspaceFolder && fs.existsSync(path.resolve(this.workspaceFolder.fsPath, ".git"));
 
@@ -74,8 +72,14 @@ function createGitGoPanel(context) {
     // Set panel HTML content
     newPanel.webview.html = getWebviewContent(context.extensionPath);
 
+    // Create webview Interface
+    webviewInterface = new WebviewInterface(newPanel);
+
+    // ROJAS DELETE
+    webviewInterface.getGitUserAndEmail();
+
     // Recieve messages
-    newPanel.webview.onDidReceiveMessage(recieveMessage, undefined, context.subscriptions);
+    newPanel.webview.onDidReceiveMessage((message) => webviewInterface.recieveMessage(message), undefined, context.subscriptions);
 
     // Reset when the current panel is closed
     newPanel.onDidDispose(
@@ -123,21 +127,6 @@ function getWebviewContent(extensionPath) {
                     </script>
                 </body>
             </html>`;
-}
-
-//  ###########################################################
-//      WEBVIEW INTERFACE
-//  ###########################################################
-
-// Recieve messages from the webview
-function recieveMessage(message) {
-    console.log(message);
-    sendMessage({ message: "HELLO REACT!!" });
-}
-
-// Send message to webview
-function sendMessage(message) {
-    currentPanel.webview.postMessage(message);
 }
 
 // this method is called when your extension is deactivated
