@@ -1,3 +1,6 @@
+const vscode = require("vscode");
+const gitLog = require("git-log-parser");
+const toArray = require("stream-to-array");
 const spawnGit = require("./spawnGit");
 
 class WebviewInterface {
@@ -42,6 +45,9 @@ class WebviewInterface {
         else if (message.type === "listStash") this.listStash(message);
         else if (message.type === "popStash") this.popStash(message);
         else if (message.type === "dropStash") this.dropStash(message);
+        else if (message.type === "getCommits") this.getCommits(message);
+        else if (message.type === "getStagedFiles") this.getStagedFiles(message);
+        else if (message.type === "getChangedFiles") this.getChangedFiles(message);
     }
 
     //  ###########################################################
@@ -227,6 +233,52 @@ class WebviewInterface {
 
     async dropStash() {
         await spawnGit(["stash", "drop"]);
+    }
+
+    //  ###########################################################
+    //      GET COMMITS
+    //  ###########################################################
+
+    // Get commits
+    async getCommits({ maxCount, hash, lastFetchTime }) {
+        if (!maxCount) maxCount = 50;
+
+        const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+
+        // Get commits since the last time
+        if (lastFetchTime) {
+            var gitLogStream = gitLog.parse({ all: true, since: lastFetchTime }, { cwd: workspaceFolder.fsPath });
+            var gitLogResult = await toArray(gitLogStream);
+            return this.sendMessage({ type: "commits", commits: gitLogResult });
+        }
+
+        // Get commits after a certain one
+        else if (hash) {
+            gitLogStream = gitLog.parse({ "max-count": maxCount, all: true, hash }, { cwd: workspaceFolder.fsPath });
+            gitLogResult = await toArray(gitLogStream);
+            return this.sendMessage({ type: "commits", commits: gitLogResult });
+        }
+
+        // Get first commits
+        else {
+            gitLogStream = gitLog.parse({ "max-count": maxCount, all: true, hash }, { cwd: workspaceFolder.fsPath });
+            gitLogResult = await toArray(gitLogStream);
+            return this.sendMessage({ type: "commits", commits: gitLogResult });
+        }
+    }
+
+    // Get staged files
+    async getStagedFiles() {
+        const stagedFiles = await spawnGit(["diff", "--name-only", "--staged"]);
+
+        if (stagedFiles.length) this.sendMessage({ type: "stagedFiles", stagedFiles });
+    }
+
+    // Get changed files
+    async getChangedFiles() {
+        const changedFiles = await spawnGit(["diff", "--name-only"]);
+
+        if (changedFiles.length) this.sendMessage({ type: "changedFiles", changedFiles });
     }
 }
 
