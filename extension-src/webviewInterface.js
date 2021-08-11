@@ -24,14 +24,24 @@ class WebviewInterface {
         else if (message.type === "setGitUserAndEmail") this.setGitUserAndEmail(message);
         else if (message.type === "initRepo") this.initRepo(message);
         else if (message.type === "cloneRepo") this.cloneRepo(message);
-        else if (message.type === "getRemote") this.getRemote(message);
-        else if (message.type === "setRemote") this.setRemote(message);
         else if (message.type === "stage") this.stage(message);
         else if (message.type === "unstage") this.unstage(message);
+        else if (message.type === "discard") this.discard(message);
         else if (message.type === "commit") this.commit(message);
         else if (message.type === "branch") this.branch(message);
         else if (message.type === "checkout") this.checkout(message);
         else if (message.type === "merge") this.merge(message);
+        else if (message.type === "getRemote") this.getRemote(message);
+        else if (message.type === "setRemote") this.setRemote(message);
+        else if (message.type === "fetch") this.fetch(message);
+        else if (message.type === "push") this.push(message);
+        else if (message.type === "pull") this.pull(message);
+        else if (message.type === "rebase") this.rebase(message);
+        else if (message.type === "reset") this.reset(message);
+        else if (message.type === "stash") this.stash(message);
+        else if (message.type === "listStash") this.listStash(message);
+        else if (message.type === "popStash") this.popStash(message);
+        else if (message.type === "dropStash") this.dropStash(message);
     }
 
     //  ###########################################################
@@ -69,11 +79,75 @@ class WebviewInterface {
     }
 
     // Clone a repository
-    async cloneRepo(url) {
+    async cloneRepo({ url }) {
         if (!url) return;
 
         await spawnGit(["clone", url]);
     }
+
+    //  ###########################################################
+    //      STAGE & COMMIT
+    //  ###########################################################
+
+    // Stage the files
+    async stage({ all, files }) {
+        if (!all && !files.length) return;
+
+        if (all) await spawnGit(["add", "-A"]);
+        else await spawnGit(["add", ...files]);
+    }
+
+    // Unstage the files
+    async unstage({ all, files }) {
+        if (!all && !files.length) return;
+
+        if (all) await spawnGit(["reset"]);
+        else await spawnGit(["reset", ...files]);
+    }
+
+    // Discard changes to a file
+    async discard({ all, files }) {
+        if (!all && !files.length) return;
+
+        if (all) await spawnGit(["checkout", "."]);
+        else await spawnGit(["checkout", ...files]);
+    }
+
+    // Commit staged files
+    async commit({ message }) {
+        if (!message) return;
+
+        await spawnGit(["commit", "-m", message]);
+    }
+
+    //  ###########################################################
+    //      BRANCHES & MERGE
+    //  ###########################################################
+
+    // Create new branch
+    async branch({ branchName, commitHash }) {
+        if (!branchName || !commitHash) return;
+
+        await spawnGit(["branch", branchName, commitHash]);
+    }
+
+    // Checkout branch
+    async checkout({ branchName }) {
+        if (!branchName) return;
+
+        await spawnGit(["checkout", branchName]);
+    }
+
+    // Merge branch to current one
+    async merge({ commitHash }) {
+        if (!commitHash) return;
+
+        await spawnGit(["merge", "--commit", "--ff", commitHash]);
+    }
+
+    //  ###########################################################
+    //      UPDATE
+    //  ###########################################################
 
     // Get the repo remote
     async getRemote() {
@@ -85,60 +159,74 @@ class WebviewInterface {
     }
 
     // Set the repo remote
-    async setRemote(url) {
+    async setRemote({ url }) {
         if (!url) return;
 
         await spawnGit(["remote", "add", "origin", url]);
     }
 
-    //  ###########################################################
-    //      STAGE & COMMIT
-    //  ###########################################################
+    // Fetch from the remote
+    async fetch() {
+        const remote = await spawnGit(["config", "--get", "remote.origin.url"]);
+        if (!remote.length) return this.sendMessage({ type: "remoteNotConfigured" });
 
-    // Stage the files
-    async stage(files) {
-        if (!files.length) return;
-
-        await spawnGit(["add", ...files]);
+        await spawnGit(["fetch", remote[0]]);
     }
 
-    // Unstage the files
-    async unstage(files) {
-        if (!files.length) return;
-
-        await spawnGit(["reset", ...files]);
-    }
-
-    // Commit staged files
-    async commit(message) {
-        if (!message) return;
-
-        await spawnGit(["commit", "-m", message]);
-    }
-
-    //  ###########################################################
-    //      BRANCHES & MERGE
-    //  ###########################################################
-
-    // Create new branch
-    async branch(branchName, hash) {
-        if (!branchName || !hash) return;
-
-        await spawnGit(["branch", branchName, hash]);
-    }
-
-    // Checkout branch
-    async checkout(branchName) {
+    // Push branch to the remote
+    async push({ branchName }) {
         if (!branchName) return;
 
-        await spawnGit(["checkout", branchName]);
+        const remote = await spawnGit(["config", "--get", "remote.origin.url"]);
+        if (!remote.length) return this.sendMessage({ type: "remoteNotConfigured" });
+
+        await spawnGit(["push", remote[0], branchName]);
     }
 
-    // Merge branch to current one
-    async merge(branchName) {
+    // Pull from the remote
+    async pull() {
+        const remote = await spawnGit(["config", "--get", "remote.origin.url"]);
+        if (!remote.length) return this.sendMessage({ type: "remoteNotConfigured" });
+
+        await spawnGit(["pull"]);
+    }
+
+    //  ###########################################################
+    //      RESETS
+    //  ###########################################################
+
+    // Rebase onto another branch
+    async rebsae({ branchName }) {
         if (!branchName) return;
 
-        await spawnGit(["merge", branchName]);
+        await spawnGit(["rebase", branchName]);
+    }
+
+    // Reset to an older commit
+    async reset({ hash }) {
+        if (!hash) return;
+
+        await spawnGit(["reset", "--hard", hash]);
+    }
+
+    //  ###########################################################
+    //      STASH
+    //  ###########################################################
+
+    async stash() {
+        await spawnGit(["stash"]);
+    }
+
+    async listStash() {
+        await spawnGit(["stash", "list"]);
+    }
+
+    async popStash() {
+        await spawnGit(["stash", "pop"]);
+    }
+
+    async dropStash() {
+        await spawnGit(["stash", "drop"]);
     }
 }
 
