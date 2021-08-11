@@ -1,3 +1,4 @@
+const fs = require("fs");
 const vscode = require("vscode");
 const gitLog = require("git-log-parser");
 const toArray = require("stream-to-array");
@@ -263,6 +264,8 @@ class WebviewInterface {
         else {
             gitLogStream = gitLog.parse({ "max-count": maxCount, all: true, hash }, { cwd: workspaceFolder.fsPath });
             gitLogResult = await toArray(gitLogStream);
+
+            this.writeToFile({ fileName: "commits.json", object: gitLogResult });
             return this.sendMessage({ type: "commits", commits: gitLogResult });
         }
     }
@@ -279,6 +282,19 @@ class WebviewInterface {
         const changedFiles = await spawnGit(["diff", "--name-only"]);
 
         if (changedFiles.length) this.sendMessage({ type: "changedFiles", changedFiles });
+    }
+
+    // Write object to file
+    async writeToFile({ fileName, object }) {
+        const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+
+        // Stringify JSON Object
+        var jsonContent = JSON.stringify(object);
+
+        fs.writeFile(`${workspaceFolder.fsPath}/${fileName}`, jsonContent, "utf8", function (err) {
+            if (err) return console.log(err);
+            console.log("JSON file has been saved.");
+        });
     }
 }
 

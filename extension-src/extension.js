@@ -1,7 +1,7 @@
 const path = require("path");
 const vscode = require("vscode");
-const gitLog = require("git-log-parser");
-const toArray = require("stream-to-array");
+// const gitLog = require("git-log-parser");
+// const toArray = require("stream-to-array");
 const WebviewInterface = require("./webviewInterface");
 const { getUniqueId, getCurrentActiveColumn, openDevTools } = require("./utils");
 
@@ -46,12 +46,12 @@ async function activate(context) {
     //  ###########################################################
 
     // Workspace folder
-    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
+    // const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0].uri : undefined;
     // const gitRepoExists = this.workspaceFolder && fs.existsSync(path.resolve(this.workspaceFolder.fsPath, ".git"));
 
-    var gitLogStream = gitLog.parse({ "max-count": 5, all: true, skip: 5 }, { cwd: workspaceFolder.fsPath });
-    const gitLogResult = await toArray(gitLogStream);
-    console.log(gitLogResult);
+    // var gitLogStream = gitLog.parse({ "max-count": 5, all: true, skip: 5 }, { cwd: workspaceFolder.fsPath });
+    // const gitLogResult = await toArray(gitLogStream);
+    // console.log(gitLogResult);
 }
 
 //  ###########################################################
@@ -76,7 +76,7 @@ function createGitGoPanel(context) {
     webviewInterface = new WebviewInterface(newPanel);
 
     // ROJAS DELETE
-    webviewInterface.getGitUserAndEmail();
+    webviewInterface.getCommits({ maxCount: 50 });
 
     // Recieve messages
     newPanel.webview.onDidReceiveMessage((message) => webviewInterface.recieveMessage(message), undefined, context.subscriptions);
