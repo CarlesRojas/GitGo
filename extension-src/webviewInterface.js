@@ -35,6 +35,8 @@ class WebviewInterface {
         else if (message.type === "branch") this.branch(message);
         else if (message.type === "checkout") this.checkout(message);
         else if (message.type === "merge") this.merge(message);
+        else if (message.type === "getLocalBranches") this.getLocalBranches(message);
+        else if (message.type === "getRemoteBranches") this.getRemoteBranches(message);
         else if (message.type === "getRemote") this.getRemote(message);
         else if (message.type === "setRemote") this.setRemote(message);
         else if (message.type === "fetch") this.fetch(message);
@@ -150,6 +152,18 @@ class WebviewInterface {
         if (!commitHash) return;
 
         await spawnGit(["merge", "--commit", "--ff", commitHash]);
+    }
+
+    // Get local branches
+    async getLocalBranches() {
+        const response = await spawnGit(["branch", "--list", "-v"]);
+        console.log(response);
+    }
+
+    // Get remote branches
+    async getRemoteBranches() {
+        const response = await spawnGit(["branch", "--list", "-v", "-r"]);
+        console.log(response);
     }
 
     //  ###########################################################
