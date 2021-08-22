@@ -154,16 +154,63 @@ class WebviewInterface {
         await spawnGit(["merge", "--commit", "--ff", commitHash]);
     }
 
+    // Parse branch names
+    parseBrachOutput(rawResponse, remote) {
+        var response = [];
+
+        for (let i = 0; i < rawResponse.length; i++) {
+            // Split line
+            const line = rawResponse[i].replace("\t", " ").replace("  ", " ").split(" ");
+
+            var branch = {};
+
+            // Get branch name and commit
+            for (let j = 0; j < line.length; j++) {
+                const element = line[j];
+
+                // Empty string
+                if (!element) continue;
+
+                // Current branch
+                if (element === "*") {
+                    branch.current = true;
+                }
+
+                // Get name
+                else if (!("name" in branch)) {
+                    if (remote) {
+                        branch.remote = element.substr(0, element.indexOf("/"));
+                        branch.name = element.substr(element.indexOf("/") + 1);
+                    } else branch.name = element;
+                }
+
+                // Get commit
+                else {
+                    branch.commit = element;
+                    break;
+                }
+            }
+
+            if (branch.name !== "HEAD") response.push(branch);
+        }
+
+        return response;
+    }
+
     // Get local branches
     async getLocalBranches() {
-        const response = await spawnGit(["branch", "--list", "-v"]);
-        console.log(response);
+        const rawResponse = await spawnGit(["branch", "--list", "-v"]);
+        var response = this.parseBrachOutput(rawResponse, false);
+        this.writeToFile({ fileName: "localBranches.json", object: response });
+        return response;
     }
 
     // Get remote branches
     async getRemoteBranches() {
-        const response = await spawnGit(["branch", "--list", "-v", "-r"]);
-        console.log(response);
+        const rawResponse = await spawnGit(["branch", "--list", "-v", "-r"]);
+        var response = this.parseBrachOutput(rawResponse, true);
+        this.writeToFile({ fileName: "remoteBranches.json", object: response });
+        return response;
     }
 
     //  ###########################################################

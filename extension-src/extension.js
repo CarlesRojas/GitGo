@@ -37,7 +37,7 @@ async function activate(context) {
         currentPanel = createGitGoPanel(context);
 
         // Open dev tools
-        openDevTools();
+        // openDevTools();
     });
     context.subscriptions.push(refreshDisposable);
 
@@ -76,7 +76,10 @@ function createGitGoPanel(context) {
     webviewInterface = new WebviewInterface(newPanel);
 
     // ROJAS DELETE
-    webviewInterface.getCommits({ maxCount: 50 });
+    webviewInterface.getCommits({ maxCount: 500 });
+
+    webviewInterface.getLocalBranches();
+    webviewInterface.getRemoteBranches();
 
     // Recieve messages
     newPanel.webview.onDidReceiveMessage((message) => webviewInterface.recieveMessage(message), undefined, context.subscriptions);
